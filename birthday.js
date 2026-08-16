@@ -39,11 +39,6 @@ const $ = (id) => document.getElementById(id);
 const canvas = $('tree');
 const ctx    = canvas.getContext('2d');
 const wishEl = $('wish');
-const photosEl = $('wishPhotos');
-const photoFrames = Array.from(photosEl.querySelectorAll('.wishPhotos__frame'));
-photoFrames.forEach((f) => {
-  f.querySelector('img').addEventListener('error', () => f.classList.add('is-missing'), { once: true });
-});
 
 const hero       = $('hero');
 const eyebrow    = $('eyebrow');
@@ -480,65 +475,8 @@ function drawRested(){
   for (const r of rested) drawSprite(SPR.crisp[r.idx], r.x, r.y, r.box, r.rot, r.a);
 }
 
-/* scattered polaroids: one photo at a time pops up at a random spot around
-   the screen (never the middle, where the tree + wish text live), holds,
-   fades out, then the next one appears somewhere else. */
-let photoTimer = 0, photoIdx = 0, photosStarted = false;
-const activePhotoFrames = () => photoFrames.filter((f) => !f.classList.contains('is-missing'));
-
-/* regions around the edges of the screen, well clear of the centre column
-   where the wish text and tree trunk sit. { xMin, xMax, yMin, yMax } in %. */
-const PHOTO_SPOTS = [
-  { x:[8,  24], y:[8,  24] },  // top-left
-  { x:[76, 92], y:[8,  24] },  // top-right
-  { x:[40, 60], y:[5,  13] },  // top-centre, above the text
-  { x:[4,  16], y:[36, 64] },  // left-mid
-  { x:[84, 96], y:[36, 64] },  // right-mid
-  { x:[10, 26], y:[76, 92] },  // bottom-left
-  { x:[74, 90], y:[76, 92] },  // bottom-right
-  { x:[40, 60], y:[87, 95] },  // bottom-centre, below the text
-];
-const choice = (arr) => arr[(Math.random() * arr.length) | 0];
-
-function placeRandomly(frame){
-  const spot = choice(PHOTO_SPOTS);
-  frame.style.left = `${rand(spot.x[0], spot.x[1])}%`;
-  frame.style.top  = `${rand(spot.y[0], spot.y[1])}%`;
-  frame.style.setProperty('--rot', `${rand(-9, 9)}deg`);
-}
-
-function setActivePhoto(i){
-  const frames = activePhotoFrames();
-  frames.forEach((f, idx) => {
-    if (idx === i) placeRandomly(f);
-    f.classList.toggle('is-active', idx === i);
-  });
-}
-function startPhotoCycle(){
-  if (photosStarted) return;
-  const frames = activePhotoFrames();
-  if (!frames.length) return;
-  photosStarted = true;
-  photoIdx = 0;
-  setActivePhoto(0);
-  if (frames.length > 1){
-    photoTimer = setInterval(() => {
-      const cur = activePhotoFrames();
-      if (!cur.length) return;
-      photoIdx = (photoIdx + 1) % cur.length;
-      setActivePhoto(photoIdx);
-    }, 2600);
-  }
-}
-function stopPhotoCycle(){
-  clearInterval(photoTimer); photoTimer = 0; photosStarted = false;
-  photoFrames.forEach((f) => f.classList.remove('is-active'));
-}
-
 function showWish(on){
   wishEl.classList.toggle('is-in', on);
-  photosEl.classList.toggle('is-in', on);
-  if (on) startPhotoCycle(); else stopPhotoCycle();
 }
 
 /* the tree's own rAF: plays once from treeStart(), then holds, living */
